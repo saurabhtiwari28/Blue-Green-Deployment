@@ -8,10 +8,11 @@ pipeline {
     }
     
     environment {
-        IMAGE_NAME = "adijaiswal/bankapp"
-        TAG = "${params.DOCKER_TAG}"  // The image tag now comes from the parameter
+        IMAGE_NAME = "trialp1lrdf.jfrog.io/prod-docker/bankapp"
+        TAG = "${params.DOCKER_TAG}"
         KUBE_NAMESPACE = 'webapps'
-        SCANNER_HOME= tool 'sonar-scanner'
+        SCANNER_HOME = tool 'sonar-scanner'
+        JFROG_USERNAME = "muneebtiwari@gmail.com"  // Replace with your JFrog username
     }
 
     stages {
@@ -38,7 +39,8 @@ pipeline {
         stage('Docker build') {
             steps {
                 script {
-                    withDockerRegistry(credentialsId: 'docker-cred') {
+                    withCredentials([string(credentialsId: 'jfrog-cred', variable: 'JFROG_TOKEN')]) {
+                        sh "docker login -u ${JFROG_USERNAME} -p ${JFROG_TOKEN} https://trialp1lrdf.jfrog.io"
                         sh "docker build -t ${IMAGE_NAME}:${TAG} ."
                     }
                 }
@@ -54,7 +56,8 @@ pipeline {
         stage('Docker Push Image') {
             steps {
                 script {
-                    withDockerRegistry(credentialsId: 'docker-cred') {
+                    withCredentials([string(credentialsId: 'jfrog-cred', variable: 'JFROG_TOKEN')]) {
+                        sh "docker login -u ${JFROG_USERNAME} -p ${JFROG_TOKEN} https://trialp1lrdf.jfrog.io"
                         sh "docker push ${IMAGE_NAME}:${TAG}"
                     }
                 }
@@ -65,7 +68,7 @@ pipeline {
             steps {
                 script {
                     withKubeConfig(caCertificate: '', clusterName: 'devopsshack-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com') {
-                        sh "kubectl apply -f mysql-ds.yml -n ${KUBE_NAMESPACE}"  // Ensure you have the MySQL deployment YAML ready
+                        sh "kubectl apply -f mysql-ds.yml -n ${KUBE_NAMESPACE}"
                     }
                 }
             }
@@ -109,7 +112,6 @@ pipeline {
                 script {
                     def newEnv = params.DEPLOY_ENV
 
-                    // Always switch traffic based on DEPLOY_ENV
                     withKubeConfig(caCertificate: '', clusterName: 'devopsshack-cluster', contextName: '', credentialsId: 'k8-token', namespace: 'webapps', restrictKubeConfigAccess: false, serverUrl: 'https://46743932FDE6B34C74566F392E30CABA.gr7.ap-south-1.eks.amazonaws.com') {
                         sh '''
                             kubectl patch service bankapp-service -p "{\\"spec\\": {\\"selector\\": {\\"app\\": \\"bankapp\\", \\"version\\": \\"''' + newEnv + '''\\"}}}" -n ${KUBE_NAMESPACE}

@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: bankapp
-        image: adijaiswal/bankapp:green # Adjust the image tag for the green version
+        image: trialp1lrdf.jfrog.io/prod-docker/bankapp:green  // Corrected to use proper JFrog URL and repo
         ports:
         - containerPort: 8080
         env:
