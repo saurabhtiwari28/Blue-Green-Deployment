@@ -8,7 +8,7 @@ pipeline {
     }
     
     environment {
-        IMAGE_NAME = "trialp1lrdf.jfrog.io/prod-docker/bankapp"
+        IMAGE_NAME = "trialp1lrdf.jfrog.io/prod-docker-local/bankapp"
         TAG = "${params.DOCKER_TAG}"
         KUBE_NAMESPACE = 'webapps'
         SCANNER_HOME = tool 'sonar-scanner'
